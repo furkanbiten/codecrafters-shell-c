@@ -12,11 +12,17 @@ int main()
         char input[100];
         fgets(input, 100, stdin);
         input[strlen(input) - 1] = '\0';
-        if (!strncmp(input, "exit 0", 100)){
+        if (!strncmp(input, "exit 0", 100)) {
             exit(0);
         }
-
-        printf("%s: command not found\n", input);
+        if (!strncmp(input, "echo", 4)) {
+            for (int i=5; i<strlen(input); i++){
+                printf("%c", input[i]);
+            }
+            printf("\n");
+        } else {
+            printf("%s: command not found\n", input);
+        }
     }
     return 0;
 }
