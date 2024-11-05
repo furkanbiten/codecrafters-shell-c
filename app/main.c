@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 int main()
@@ -11,7 +12,7 @@ int main()
         char input[100];
         fgets(input, 100, stdin);
         input[strlen(input) - 1] = '\0';
-        if (strncmp(input, "exit 0", 100) == 0){
+        if (!strncmp(input, "exit 0", 100)){
             exit(0);
         }
 
