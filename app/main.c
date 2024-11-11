@@ -75,6 +75,10 @@ void cd_command(char* input)
     char* input_copy = strdup(input);
     char* cmd = strtok(input_copy, " ");
     char* args = strtok(NULL, " ");
+    if (strncmp(args, "~", 1) == 0){
+
+        snprintf(args, 1024, "%s/%s", getenv("HOME"), args+1);
+    }
     if (access(args, F_OK) == 0) {
         chdir(args);
     } else {
