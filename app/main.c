@@ -4,57 +4,40 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
-int read_dir(char* dir_path, char* exes[], char* locs[])
+int is_executable(const char* path) { return access(path, X_OK) == 0; }
+
+char* find_in_path(char* command)
 {
-
-    DIR* d;
-    struct dirent* file;
-    char* token;
-    int count = 0;
-    while ((token = strsep(&dir_path, ":"))) {
-
-        d = opendir(token);
-        if (d) {
-            while ((file = readdir(d)) != NULL) {
-                if (!strncmp(file->d_name, ".", 1) || strncmp(file->d_name, "..", 2)) {
-                    exes[count] = strdup(file->d_name);
-                    locs[count] = strdup(token);
-                    // exes[count] = file->d_name;
-                    // locs[count] = token;
-                    // printf("%s \t %s\n", exes[count], locs[count]);
-                    count++;
-                }
-
-                if (count >= 500) {
-                    printf("Reached maximum limit for commands and locs\n");
-                    break;
-                }
-            }
-            closedir(d);
-        }
+    char* path = getenv("PATH");
+    if (path == NULL) {
+        return NULL;
     }
-    return count;
-}
+    char* path_copy = strdup(path);
+    char* dir = strtok(path_copy, ":");
+    static char tokenized_path[1024];
+    while (dir != NULL) {
 
-bool find_commands(char* commands[], int com_count, char* locs[], char* input)
-{
-    for (int i = 0; i < com_count; i++) {
-        if (!strcmp(commands[i], input + 5)) {
-            printf("%s is %s/%s\n", input + 5, locs[i], input + 5);
-            return true;
+        snprintf(tokenized_path, sizeof(tokenized_path), "%s/%s", dir, command);
+
+        if (is_executable(tokenized_path)) {
+
+            free(path_copy);
+            char* result = strdup(tokenized_path);
+            return result;
         }
+
+        dir = strtok(NULL, ":");
     }
-    // printf("Returning false");
-    return false;
+
+    free(path_copy);
+
+    return NULL;
 }
 
 int main(int argc, char* argv[])
 {
-    char* path = getenv("PATH");
-    char* commands[500];
-    char* locs[500];
-    int len = read_dir(path, commands, locs);
 
     while (1) {
         printf("$ ");
@@ -64,38 +47,49 @@ int main(int argc, char* argv[])
         char input[100];
         fgets(input, 100, stdin);
         input[strlen(input) - 1] = '\0';
+        if (strlen(input) == 0) {
+            continue;
+        }
 
-        if (!strncmp(input, "exit ", 5)) {
+        if (strncmp(input, "exit ", 5) == 0) {
             exit(0);
-        } else if (!strncmp(input, "type ", 5)) {
+        }
 
-            if (!strncmp(input + 5, "echo", 4)) {
-                printf("echo is a shell builtin\n");
+        if (strncmp(input, "echo ", 5) == 0) {
+            printf("%s\n", input + 5);
+            continue;
+        }
 
-            } else if (!strncmp(input + 5, "exit", 4)) {
-                printf("exit is a shell builtin\n");
+        if (strncmp(input, "type ", 5) == 0) {
+            char* cmd = input + 5;
 
-            } else if (!strncmp(input + 5, "cat", 4)) {
-                printf("cat is /bin/cat\n");
-
-            } else if (!strncmp(input + 5, "type", 4)) {
-                printf("type is a shell builtin\n");
-
-            } 
- 
-            else {
-                bool found = find_commands(commands, len, locs, input);
-                if (!found) {
-                    printf("%s: not found\n", input + 5);
+            if (strncmp(cmd, "echo", 4) == 0 || strncmp(cmd, "exit", 4) == 0 || strncmp(cmd, "type", 4) == 0) {
+                printf("%s is a shell builtin\n", cmd);
+            } else {
+                char* cmd_path = find_in_path(cmd);
+                if (cmd_path) {
+                    printf("%s is %s\n", cmd, cmd_path);
+                } else {
+                    printf("%s: not found\n", cmd);
                 }
             }
+            continue;
         }
 
-        else if (!strncmp(input, "echo ", 5)) {
-            printf("%s\n", input + 5);
-        } else {
-            printf("%s: command not found\n", input);
+        char* input_copy = strdup(input);
+        char* cmd = strtok(input_copy, " ");
+        char* args = strtok(NULL, "");
+        char* cmd_path = find_in_path(cmd);
+        if (cmd_path) {
+            char temp_buffer[1024];
+            sprintf(temp_buffer, "%s %s", cmd_path, args);
+
+            system(temp_buffer);
+            free(input_copy);
+            continue;
         }
+
+        printf("%s: command not found\n", input);
     }
     return 0;
 }
