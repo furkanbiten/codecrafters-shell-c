@@ -52,7 +52,8 @@ void type_command(char* input)
     }
 }
 
-bool check_others(char* input){
+bool check_others(char* input)
+{
     char* input_copy = strdup(input);
     char* cmd = strtok(input_copy, " ");
     char* args = strtok(NULL, "");
@@ -67,6 +68,18 @@ bool check_others(char* input){
         return true;
     }
     return false;
+}
+
+void cd_command(char* input)
+{
+    char* input_copy = strdup(input);
+    char* cmd = strtok(input_copy, " ");
+    char* args = strtok(NULL, " ");
+    if (access(args, F_OK) == 0) {
+        chdir(args);
+    } else {
+        printf("cd: %s: No such file or directory\n", args);
+    }
 }
 
 int main(int argc, char* argv[])
@@ -104,19 +117,12 @@ int main(int argc, char* argv[])
         }
 
         bool found_cmd = check_others(input);
-        if (found_cmd){
+        if (found_cmd) {
             continue;
         }
 
         if (strncmp(input, "cd ", 3) == 0) {
-            char* input_copy = strdup(input);
-            char* cmd = strtok(input_copy, " ");
-            char* args = strtok(NULL, " ");
-            if (access(args, F_OK) == 0){
-                chdir(args);
-            } else{
-                printf("cd: %s: No such file or directory\n", args);
-            }
+            cd_command(input);
             continue;
         }
 
