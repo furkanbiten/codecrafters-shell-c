@@ -40,7 +40,7 @@ void type_command(char* input)
 {
     char* cmd = input + 5;
 
-    if (strncmp(cmd, "echo", 4) == 0 || strncmp(cmd, "pwd", 3) == 0 || strncmp(cmd, "exit", 4) == 0 || strncmp(cmd, "type", 4) == 0) {
+    if (strncmp(cmd, "cd", 2) == 0 || strncmp(cmd, "echo", 4) == 0 || strncmp(cmd, "pwd", 3) == 0 || strncmp(cmd, "exit", 4) == 0 || strncmp(cmd, "type", 4) == 0) {
         printf("%s is a shell builtin\n", cmd);
     } else {
         char* cmd_path = find_in_path(cmd);
@@ -57,6 +57,7 @@ bool check_others(char* input){
     char* cmd = strtok(input_copy, " ");
     char* args = strtok(NULL, "");
     char* cmd_path = find_in_path(cmd);
+
     if (cmd_path) {
         char temp_buffer[1024];
         sprintf(temp_buffer, "%s %s", cmd_path, args);
@@ -104,6 +105,18 @@ int main(int argc, char* argv[])
 
         bool found_cmd = check_others(input);
         if (found_cmd){
+            continue;
+        }
+
+        if (strncmp(input, "cd ", 3) == 0) {
+            char* input_copy = strdup(input);
+            char* cmd = strtok(input_copy, " ");
+            char* args = strtok(NULL, " ");
+            if (access(args, F_OK) == 0){
+                chdir(args);
+            } else{
+                printf("cd: %s: No such file or directory\n", args);
+            }
             continue;
         }
 
